@@ -70,6 +70,10 @@ BOARD_DEFS = {
         'mcu': 'stm32f446xx',
         'sdio_bus': 'sdio'
     },
+    'btt-skr-3': {
+        'mcu': 'stm32h743xx',
+        'sdio_bus': 'sdio'
+    },
     'monster8': {
         'mcu': "stm32f407xx",
         'spi_bus': "spi3a",
