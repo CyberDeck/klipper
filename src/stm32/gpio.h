@@ -72,6 +72,6 @@ uint8_t sdio_read_data(struct sdio_config sdio_config, uint8_t *data
 uint8_t sdio_write_data(struct sdio_config sdio_config, uint8_t *data
                         , uint32_t numblocks, uint32_t blocksize);
 void sdio_switch_bus_width_and_speed(struct sdio_config sdio_config
-                                     , uint8_t width, uint8_t clkdiv);
+                                     , uint8_t width, uint32_t clkdiv);
 
 #endif // gpio.h

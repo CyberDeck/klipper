@@ -11,8 +11,40 @@
 #include "sched.h" // sched_shutdown
 #include "generic/armcm_timer.h" // udelay
 
+#ifdef CONFIG_MACH_STM32H7
+#define SDIO_SDMMC_TypeDef SDMMC_TypeDef
+#define SDIO_SDMMC SDMMC1
+#define SDIO_STA_CMDACT SDMMC_STA_CPSMACT
+#define SDIO_STA_CTIMEOUT SDMMC_STA_CTIMEOUT
+#define SDIO_STA_DTIMEOUT SDMMC_STA_DTIMEOUT
+#define SDIO_STA_CCRCFAIL SDMMC_STA_CCRCFAIL
+#define SDIO_STA_DCRCFAIL SDMMC_STA_DCRCFAIL
+#define SDIO_STA_RXOVERR SDMMC_STA_RXOVERR
+#define SDIO_STA_CMDSENT SDMMC_STA_CMDSENT
+#define SDIO_STA_CMDREND SDMMC_STA_CMDREND
+#define SDIO_STA_DATAEND SDMMC_STA_DATAEND
+#define SDIO_STA_TXUNDERR SDMMC_STA_TXUNDERR
+#define SDIO_CMD_WAITRESP SDMMC_CMD_WAITRESP
+#define SDIO_CMD_WAITRESP_0 SDMMC_CMD_WAITRESP_0
+#define SDIO_CMD_CPSMEN SDMMC_CMD_CPSMEN
+#define SDIO_DCTRL_DBLOCKSIZE_0 SDMMC_DCTRL_DBLOCKSIZE_0
+#define SDIO_DCTRL_DBLOCKSIZE_1 SDMMC_DCTRL_DBLOCKSIZE_1
+#define SDIO_DCTRL_DBLOCKSIZE_2 SDMMC_DCTRL_DBLOCKSIZE_2
+#define SDIO_DCTRL_DBLOCKSIZE_3 SDMMC_DCTRL_DBLOCKSIZE_3
+#define SDIO_DCTRL_DBLOCKSIZE_Msk SDMMC_DCTRL_DBLOCKSIZE_Msk
+#define SDIO_DCTRL_DTDIR SDMMC_DCTRL_DTDIR
+#define SDIO_DCTRL_DTEN SDMMC_DCTRL_DTEN
+#define SDIO_STA_RXFIFOE SDMMC_STA_RXFIFOE
+#define SDIO_STA_TXFIFOF SDMMC_STA_TXFIFOF
+#define CLKDIV_MASK 0x3FF
+#else
+#define SDIO_SDMMC_TypeDef SDIO_TypeDef
+#define SDIO_SDMMC SDIO
+#define CLKDIV_MASK 0xFF
+#endif
+
 struct sdio_info {
-    SDIO_TypeDef *sdio;
+    SDIO_SDMMC_TypeDef *sdio;
     uint8_t clk_pin, cmd_pin, dat0_pin, dat1_pin, dat2_pin, dat3_pin, function;
 };
 
@@ -56,11 +88,39 @@ DECL_CONSTANT_STR("BUS_PINS_sdio", "PC12,PD2,PC8,PC9,PC10,PC11");
 #define SDIO_FUNCTION GPIO_FUNCTION(12)
 
 static const struct sdio_info sdio_bus[] = {
-    { SDIO, GPIO('C', 12), GPIO('D', 2), GPIO('C', 8),
+    { SDIO_SDMMC, GPIO('C', 12), GPIO('D', 2), GPIO('C', 8),
       GPIO('C', 9), GPIO('C', 10), GPIO('C', 11), SDIO_FUNCTION },
 };
 
 #define SDIO_MAX_TIMEOUT 500 // Wait for at least 500ms before a timeout occurs
+
+#ifdef CONFIG_MACH_STM32H7
+
+#define CLKCR_CLEAR_MASK (SDMMC_CLKCR_SELCLKRX | SDMMC_CLKCR_BUSSPEED | \
+    SDMMC_CLKCR_DDR | SDMMC_CLKCR_HWFC_EN | SDMMC_CLKCR_NEGEDGE | \
+    SDMMC_CLKCR_WIDBUS | SDMMC_CLKCR_PWRSAV | SDMMC_CLKCR_CLKDIV)
+#define DCTRL_CLEAR_MASK (SDMMC_DCTRL_DTEN | SDMMC_DCTRL_DTDIR | \
+    SDMMC_DCTRL_DTMODE | SDMMC_DCTRL_DBLOCKSIZE)
+#define CMD_CLEAR_MASK (SDMMC_CMD_CMDINDEX | SDMMC_CMD_WAITRESP | \
+    SDMMC_CMD_WAITINT | SDMMC_CMD_WAITPEND | SDMMC_CMD_CPSMEN | \
+    SDMMC_CMD_CMDSUSPEND)
+#define SDIO_INIT_CLK_DIV 0xFA
+#define SDIO_CLOCK_BYPASS_DISABLE 0
+#define SDIO_CLOCK_EDGE_RISING 0
+#define SDIO_CLOCK_POWER_SAVE_DISABLE 0
+#define SDIO_BUS_WIDE_1B 0
+#define SDIO_BUS_WIDE_4B SDMMC_CLKCR_WIDBUS_0
+#define SDIO_HARDWARE_FLOW_CONTROL_DISABLE 0
+#define SDIO_HARDWARE_FLOW_CONTROL_ENABLE SDMMC_CLKCR_HWFC_EN
+#define SDIO_CMD_FLAGS (SDMMC_STA_CCRCFAIL | SDMMC_STA_CTIMEOUT | \
+    SDMMC_STA_CMDREND | SDMMC_STA_CMDSENT)
+#define SDIO_STATIC_FLAGS (SDMMC_STA_CCRCFAIL | SDMMC_STA_DCRCFAIL | \
+    SDMMC_STA_CTIMEOUT | SDMMC_STA_DTIMEOUT | SDMMC_STA_TXUNDERR | \
+    SDMMC_STA_RXOVERR | SDMMC_STA_CMDREND | SDMMC_STA_CMDSENT | \
+    SDMMC_STA_DATAEND | SDMMC_STA_DBCKEND | SDMMC_STA_SDIOIT)
+
+#else /* CONFIG_MACH_STM32H7 */
+
 #define CLKCR_CLEAR_MASK (SDIO_CLKCR_CLKDIV | SDIO_CLKCR_PWRSAV | \
     SDIO_CLKCR_BYPASS | SDIO_CLKCR_WIDBUS | SDIO_CLKCR_NEGEDGE | \
     SDIO_CLKCR_HWFC_EN)
@@ -84,6 +144,8 @@ static const struct sdio_info sdio_bus[] = {
     SDIO_STA_RXOVERR | SDIO_STA_CMDREND | SDIO_STA_CMDSENT | \
     SDIO_STA_DATAEND | SDIO_STA_DBCKEND | SDIO_STA_SDIOIT)
 
+#endif /* !CONFIG_MACH_STM32H7 */
+
 struct sdio_config
 sdio_setup(uint32_t bus)
 {
@@ -91,7 +153,7 @@ sdio_setup(uint32_t bus)
         shutdown("Invalid sdio bus");
 
     // Enable SDIO
-    SDIO_TypeDef *sdio = sdio_bus[bus].sdio;
+    SDIO_SDMMC_TypeDef *sdio = sdio_bus[bus].sdio;
     if (!is_enabled_pclock((uint32_t)sdio)) {
         // Enable clock
         enable_pclock((uint32_t)sdio);
@@ -117,14 +179,25 @@ sdio_setup(uint32_t bus)
         SDIO_INIT_CLK_DIV;
     MODIFY_REG(sdio->CLKCR, CLKCR_CLEAR_MASK, sdio_confreg);
 
+    #if CONFIG_MACH_STM32H7
+    // Power off card
+    MODIFY_REG(sdio->POWER, SDMMC_POWER_PWRCTRL, 0);
+    // Power on card
+    MODIFY_REG(sdio->POWER, SDMMC_POWER_PWRCTRL, SDMMC_POWER_PWRCTRL);
+    // Wait for 2ms (standard: at least 1ms) to settle
+    udelay(2000);
+    #else
     // Disable clk
     CLEAR_BIT(sdio->CLKCR, SDIO_CLKCR_CLKEN);
+
     // Set power state to _on_
     sdio->POWER = SDIO_POWER_PWRCTRL;
     // Wait for 2ms (standard: at least 1ms) to settle
     udelay(2000);
+
     // Enable Clk
     SET_BIT(sdio->CLKCR, SDIO_CLKCR_CLKEN);
+    #endif
 
     return (struct sdio_config){ .sdio = sdio };
 }
@@ -132,7 +205,7 @@ sdio_setup(uint32_t bus)
 uint32_t
 sdio_get_cmd_error(struct sdio_config sdio, uint32_t flags)
 {
-    SDIO_TypeDef *regs = sdio.sdio;
+    SDIO_SDMMC_TypeDef *regs = sdio.sdio;
 
     // wait for a timeout (max. SDIO_MAX_TIMEOUT) in msec.
     // 8 cycles is the instruction cycles for the loop below.
@@ -162,7 +235,7 @@ sdio_send_command(struct sdio_config sdio_config, uint8_t cmd,
     uint32_t argument, uint8_t wait, uint8_t *response_data,
     uint8_t *response_data_len)
 {
-    SDIO_TypeDef *sdio = sdio_config.sdio;
+    SDIO_SDMMC_TypeDef *sdio = sdio_config.sdio;
     uint32_t wait_flags = 0; // valid for SDIO_WAIT_NO_RESPONSE
     uint32_t sta_flags = (wait == SDIO_WAIT_NO_RESPONSE) ?
         SDIO_STA_CMDSENT : SDIO_STA_CCRCFAIL | SDIO_STA_CMDREND | \
@@ -277,7 +350,7 @@ uint8_t
 sdio_prepare_data_transfer(struct sdio_config sdio_config, uint8_t read,
     uint32_t numblocks, uint32_t blocksize)
 {
-    SDIO_TypeDef *sdio = sdio_config.sdio;
+    SDIO_SDMMC_TypeDef *sdio = sdio_config.sdio;
     uint32_t dctrl_blocksize = sdio_get_dctrl_blocksize(blocksize);
     uint32_t reg = dctrl_blocksize | ((read > 0) ?
         SDIO_DCTRL_DTDIR : 0U) | SDIO_DCTRL_DTEN;
@@ -298,7 +371,7 @@ sdio_read_data(struct sdio_config sdio_config, uint8_t *data,
     uint32_t numblocks, uint32_t blocksize)
 {
     // Read data by polling
-    SDIO_TypeDef *sdio = sdio_config.sdio;
+    SDIO_SDMMC_TypeDef *sdio = sdio_config.sdio;
     uint32_t data_remaining = numblocks*blocksize;
     uint8_t *buf = data;
 
@@ -308,7 +381,7 @@ sdio_read_data(struct sdio_config sdio_config, uint8_t *data,
 
     while ((sdio->STA & (SDIO_STA_RXOVERR | SDIO_STA_DCRCFAIL |
         SDIO_STA_DTIMEOUT | SDIO_STA_DATAEND)) == 0) {
-        if ((sdio->STA & SDIO_STA_RXDAVL) != 0) {
+        if ((sdio->STA & SDIO_STA_RXFIFOE) == 0) {
             uint32_t tmp = sdio->FIFO;
             for (uint8_t i=0; (i<4) && (data_remaining>0); i++) {
                 *buf = (uint8_t)(tmp & 0xFF);
@@ -333,7 +406,7 @@ sdio_read_data(struct sdio_config sdio_config, uint8_t *data,
     }
 
     // Empty FIFO and clear flags again
-    while (((sdio->STA & SDIO_STA_RXDAVL) != 0) && (data_remaining > 0)) {
+    while (((sdio->STA & SDIO_STA_RXFIFOE) == 0) && (data_remaining > 0)) {
         uint32_t tmp = sdio->FIFO;
         for (uint8_t i=0; (i<4) && (data_remaining>0); i++) {
             *buf = (uint8_t)(tmp & 0xFF);
@@ -352,7 +425,7 @@ sdio_write_data(struct sdio_config sdio_config, uint8_t *data,
     uint32_t numblocks, uint32_t blocksize)
 {
     // Write data by polling
-    SDIO_TypeDef *sdio = sdio_config.sdio;
+    SDIO_SDMMC_TypeDef *sdio = sdio_config.sdio;
     uint32_t data_remaining = numblocks*blocksize;
     uint8_t *buf = data;
 
@@ -394,7 +467,7 @@ void
 sdio_send_cmd(struct sdio_config sdio_config, uint8_t cmd, uint32_t argument,
     uint8_t wait)
 {
-    SDIO_TypeDef *sdio = sdio_config.sdio;
+    SDIO_SDMMC_TypeDef *sdio = sdio_config.sdio;
 
     sdio->ARG = argument;
     //CMD and State Machine enabled. Wait for response like specified.
@@ -405,15 +478,15 @@ sdio_send_cmd(struct sdio_config sdio_config, uint8_t cmd, uint32_t argument,
 
 void
 sdio_switch_bus_width_and_speed(struct sdio_config sdio_config, uint8_t width,
-    uint8_t clkdiv)
+    uint32_t clkdiv)
 {
-    SDIO_TypeDef *sdio = sdio_config.sdio;
+    SDIO_SDMMC_TypeDef *sdio = sdio_config.sdio;
 
     if ((width == 1) || (width == 4)) {
         uint32_t sdio_confreg = SDIO_CLOCK_EDGE_RISING | \
             SDIO_CLOCK_BYPASS_DISABLE | SDIO_CLOCK_POWER_SAVE_DISABLE | \
             ((width == 4) ? SDIO_BUS_WIDE_4B : SDIO_BUS_WIDE_1B) | \
-            SDIO_HARDWARE_FLOW_CONTROL_ENABLE | (clkdiv & 0xFF);
+            SDIO_HARDWARE_FLOW_CONTROL_ENABLE | (clkdiv & CLKDIV_MASK);
         MODIFY_REG(sdio->CLKCR, CLKCR_CLEAR_MASK, sdio_confreg);
     }
 }
