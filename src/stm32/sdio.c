@@ -306,16 +306,13 @@ sdio_read_data(struct sdio_config sdio_config, uint8_t *data,
 
     while ((sdio->STA & (SDIO_STA_RXOVERR | SDIO_STA_DCRCFAIL |
         SDIO_STA_DTIMEOUT | SDIO_STA_DATAEND)) == 0) {
-        if ((sdio->STA & SDIO_STA_RXFIFOHF) != 0) {
-            // Receive FIFO half full: At least 8 words can be read
-            for (uint8_t j=0; j<4; j++) {
-                uint32_t tmp = sdio->FIFO;
-                for (uint8_t i=0; (i<4) && (data_remaining>0); i++) {
-                    *buf = (uint8_t)(tmp & 0xFF);
-                    buf++;
-                    data_remaining--;
-                    tmp >>= 8U;
-                }
+        if ((sdio->STA & SDIO_STA_RXDAVL) != 0) {
+            uint32_t tmp = sdio->FIFO;
+            for (uint8_t i=0; (i<4) && (data_remaining>0); i++) {
+                *buf = (uint8_t)(tmp & 0xFF);
+                buf++;
+                data_remaining--;
+                tmp >>= 8U;
             }
         }
     }
@@ -363,17 +360,14 @@ sdio_write_data(struct sdio_config sdio_config, uint8_t *data,
 
     while ((sdio->STA & (SDIO_STA_TXUNDERR | SDIO_STA_DCRCFAIL |
         SDIO_STA_DTIMEOUT | SDIO_STA_DATAEND)) == 0) {
-        if ((sdio->STA & SDIO_STA_TXFIFOHE) == 0) {
-            // Transmit FIFO half full: At least 8 words can be written
-            for (uint8_t j=0; j<4; j++) {
-                uint32_t tmp = 0;
-                for (uint8_t i=0; (i<4) && (data_remaining>0); i++) {
-                    tmp |= ((uint32_t)(*buf) << (i<<3));
-                    buf++;
-                    data_remaining--;
-                }
-                sdio->FIFO = tmp;
+        if ((sdio->STA & SDIO_STA_TXFIFOF) == 0) {
+            uint32_t tmp = 0;
+            for (uint8_t i=0; (i<4) && (data_remaining>0); i++) {
+                tmp |= ((uint32_t)(*buf) << (i<<3));
+                buf++;
+                data_remaining--;
             }
+            sdio->FIFO = tmp;
         }
     }
 
