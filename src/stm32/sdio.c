@@ -386,7 +386,6 @@ sdio_write_data(struct sdio_config sdio_config, uint8_t *data,
         return SDIO_WRITE_UNDERRUN;
     }
 
-    sdio->ICR = SDIO_STATIC_FLAGS;
     return SDIO_OK;
 }
 

@@ -153,6 +153,9 @@ enable_clock_stm32f446(void)
             ;
 
         RCC->DCKCFGR2 = RCC_DCKCFGR2_CK48MSEL;
+    } else {
+        // Reset value just in case the booloader modified the default value
+        RCC->DCKCFGR2 = 0;
     }
 
     // Set SDIO clk to PLL48CLK

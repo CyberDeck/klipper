@@ -118,16 +118,14 @@ SW_SPI_BUS_CMD = "spi_set_software_bus oid=%d " \
 SPI_SEND_CMD = "spi_send oid=%c data=%*s"
 SPI_XFER_CMD = "spi_transfer oid=%c data=%*s"
 SPI_XFER_RESPONSE = "spi_transfer_response oid=%c response=%*s"
-SDIO_CFG_CMD = "config_sdio oid=%d"
+SDIO_CFG_CMD = "config_sdio oid=%d blocksize=%u"
 SDIO_BUS_CMD = "sdio_set_bus oid=%d sdio_bus=%s"
 SDIO_SEND_CMD = "sdio_send_command oid=%c cmd=%c argument=%u wait=%c"
 SDIO_SEND_CMD_RESPONSE = "sdio_send_command_response oid=%c error=%c " \
     "response=%*s"
-SDIO_READ_DATA="sdio_read_data oid=%c cmd=%c argument=%u wait=%u " \
-    "numblocks=%u blocksize=%u"
+SDIO_READ_DATA="sdio_read_data oid=%c cmd=%c argument=%u"
 SDIO_READ_DATA_RESPONSE="sdio_read_data_response oid=%c error=%c read=%u"
-SDIO_WRITE_DATA="sdio_write_data oid=%c cmd=%c argument=%u wait=%u " \
-    "numblocks=%u blocksize=%u"
+SDIO_WRITE_DATA="sdio_write_data oid=%c cmd=%c argument=%u"
 SDIO_WRITE_DATA_RESPONSE="sdio_write_data_response oid=%c error=%c write=%u"
 SDIO_READ_DATA_BUFFER="sdio_read_data_buffer oid=%c offset=%u len=%c"
 SDIO_READ_DATA_BUFFER_RESPONSE="sdio_read_data_buffer_response oid=%c data=%*s"
@@ -176,13 +174,11 @@ class SDIODirect:
     def sdio_send_cmd(self, cmd, argument, wait):
         return self._sdio_send_cmd.send([self.oid, cmd, argument, wait])
 
-    def sdio_read_data(self, cmd, argument, wait, numblocks, blocksize):
-        return self._sdio_read_data.send([self.oid, cmd, argument, wait,
-            numblocks, blocksize])
+    def sdio_read_data(self, cmd, argument):
+        return self._sdio_read_data.send([self.oid, cmd, argument])
 
-    def sdio_write_data(self, cmd, argument, wait, numblocks, blocksize):
-        return self._sdio_write_data.send([self.oid, cmd, argument, wait,
-            numblocks, blocksize])
+    def sdio_write_data(self, cmd, argument):
+        return self._sdio_write_data.send([self.oid, cmd, argument])
 
     def sdio_read_data_buffer(self, offset, length=32):
         return self._sdio_read_data_buffer.send([self.oid, offset, length])
@@ -1122,7 +1118,7 @@ class SDCardSDIO:
                     offset = sector * SECTOR_SIZE
 
                 params = self.sdio.sdio_read_data(
-                    SD_COMMANDS['READ_SINGLE_BLOCK'], offset, 1, 1, SECTOR_SIZE)
+                    SD_COMMANDS['READ_SINGLE_BLOCK'], offset)
                 if params['error'] != 0:
                     raise OSError(
                         'Read data failed. Error code=%d' %(params['error'],) )
@@ -1170,7 +1166,7 @@ class SDCardSDIO:
             for i in range(0, SECTOR_SIZE, CHUNKSIZE):
                 self.sdio.sdio_write_data_buffer(i, outbuf[i:i+CHUNKSIZE])
             params = self.sdio.sdio_write_data(
-                SD_COMMANDS['WRITE_BLOCK'], offset, 1, 1, SECTOR_SIZE)
+                SD_COMMANDS['WRITE_BLOCK'], offset)
             if (params['error'] != 0) or (params['write'] != SECTOR_SIZE):
                 raise OSError(
                     "flash_sdcard: Error writing to sector %d"% (sector,))
@@ -1354,7 +1350,7 @@ class MCUConnection:
         if bus not in bus_enums:
             raise SPIFlashError("Invalid SDIO Bus: %s" % (bus,))
         bus_cmd = SDIO_BUS_CMD % (SDIO_OID, bus)
-        sdio_cfg_cmd = SDIO_CFG_CMD % (SDIO_OID)
+        sdio_cfg_cmd = SDIO_CFG_CMD % (SDIO_OID, SECTOR_SIZE)
         cfg_cmds = [ALLOC_OIDS_CMD % (1,), sdio_cfg_cmd, bus_cmd]
         for cmd in cfg_cmds:
             self._serial.send(cmd)
