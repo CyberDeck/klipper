@@ -6,6 +6,7 @@
 
 #include <string.h> // memcpy
 #include "board/gpio.h" // gpio_in_setup
+#include "board/sdio.h" // sdio_setup
 #include "basecmd.h" // oid_alloc
 #include "command.h" // DECL_COMMAND
 #include "sched.h" // DECL_SHUTDOWN

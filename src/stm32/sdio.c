@@ -6,7 +6,7 @@
 
 #include "board/io.h" // readb, writeb
 #include "command.h" // shutdown
-#include "gpio.h" // sdio_setup
+#include "sdio.h" // sdio_setup
 #include "internal.h" // gpio_peripheral
 #include "sched.h" // sched_shutdown
 #include "generic/armcm_timer.h" // udelay
@@ -96,18 +96,18 @@ sdio_setup(uint32_t bus)
         // Enable clock
         enable_pclock((uint32_t)sdio);
         // Initialize pins
-        gpio_peripheral_speed(
-            sdio_bus[bus].dat0_pin, sdio_bus[bus].function, 1, 0x03);
-        gpio_peripheral_speed(
-            sdio_bus[bus].dat1_pin, sdio_bus[bus].function, 1, 0x03);
-        gpio_peripheral_speed(
-            sdio_bus[bus].dat2_pin, sdio_bus[bus].function, 1, 0x03);
-        gpio_peripheral_speed(
-            sdio_bus[bus].dat3_pin, sdio_bus[bus].function, 1, 0x03);
-        gpio_peripheral_speed(
-            sdio_bus[bus].cmd_pin, sdio_bus[bus].function, 1, 0x03);
-        gpio_peripheral_speed(
-            sdio_bus[bus].clk_pin, sdio_bus[bus].function, 1, 0x03);
+        gpio_peripheral(
+            sdio_bus[bus].dat0_pin, sdio_bus[bus].function|GPIO_HIGH_SPEED, 1);
+        gpio_peripheral(
+            sdio_bus[bus].dat1_pin, sdio_bus[bus].function|GPIO_HIGH_SPEED, 1);
+        gpio_peripheral(
+            sdio_bus[bus].dat2_pin, sdio_bus[bus].function|GPIO_HIGH_SPEED, 1);
+        gpio_peripheral(
+            sdio_bus[bus].dat3_pin, sdio_bus[bus].function|GPIO_HIGH_SPEED, 1);
+        gpio_peripheral(
+            sdio_bus[bus].cmd_pin, sdio_bus[bus].function|GPIO_HIGH_SPEED, 1);
+        gpio_peripheral(
+            sdio_bus[bus].clk_pin, sdio_bus[bus].function|GPIO_HIGH_SPEED, 1);
     }
 
     // Setup SDIO with 1 bit width first and slow clock <400 kHz
