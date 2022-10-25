@@ -1,0 +1,1 @@
+- I have added some initial review comments. Overall the sdio implementation looks similar to what I came up, however I did want to bring up that when researching the stm32 SDIO peripheral it seems recommended to check half empty flags when reading from and writing to the FIFO. Apparently this reduces the chance of buffer underrun/overrun.
