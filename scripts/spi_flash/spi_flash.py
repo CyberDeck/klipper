@@ -130,8 +130,7 @@ SDIO_WRITE_DATA_RESPONSE="sdio_write_data_response oid=%c error=%c write=%u"
 SDIO_READ_DATA_BUFFER="sdio_read_data_buffer oid=%c offset=%u len=%c"
 SDIO_READ_DATA_BUFFER_RESPONSE="sdio_read_data_buffer_response oid=%c data=%*s"
 SDIO_WRITE_DATA_BUFFER="sdio_write_data_buffer oid=%c offset=%u data=%*s"
-SDIO_SET_BUS_WIDTH_AND_SPEED="sdio_set_bus_width_and_speed oid=%c width=%u " \
-    "clkdiv=%u"
+SDIO_SET_SPEED="sdio_set_speed oid=%c speed=%u"
 
 FINALIZE_CFG_CMD = "finalize_config crc=%d"
 
@@ -168,8 +167,7 @@ class SDIODirect:
             self.oid)
         self._sdio_write_data_buffer = mcu.CommandWrapper(ser,
             SDIO_WRITE_DATA_BUFFER)
-        self._sdio_set_bus_width_and_speed = mcu.CommandWrapper(ser,
-            SDIO_SET_BUS_WIDTH_AND_SPEED)
+        self._sdio_set_speed = mcu.CommandWrapper(ser, SDIO_SET_SPEED)
 
     def sdio_send_cmd(self, cmd, argument, wait):
         return self._sdio_send_cmd.send([self.oid, cmd, argument, wait])
@@ -186,9 +184,8 @@ class SDIODirect:
     def sdio_write_data_buffer(self, offset, data):
         return self._sdio_write_data_buffer.send([self.oid, offset, data])
 
-    def sdio_set_bus_width_and_speed(self, width, clkdiv=0):
-        return self._sdio_set_bus_width_and_speed.send(
-            [self.oid, width, clkdiv])
+    def sdio_set_speed(self, speed):
+        return self._sdio_set_speed.send([self.oid, speed])
 
 
 # FatFs Constants. Enums are implemented as lists. The item's index is its value
@@ -940,27 +937,8 @@ class SDCardSDIO:
                 self.rca << 16, tries=1):
                 raise OSError("flash_sdcard: failed to select the card")
 
-            # Set SDIO clk speed to approx 1 MHz with bus width=1
-            self.sdio.sdio_set_bus_width_and_speed(1, 0x2e)
-
-            #
-            # Next lines may be used to drive the SDIO with 4 data lines.
-            # However, I had some issues with SD cards and the overall transfer
-            # time is not affected much.
-            #
-
-            # Set block size to 512 (CMD16)
-            #if not self._check_command(check_for_ocr_errors, 'SET_BLOCKLEN',
-            #     SECTOR_SIZE, tries=5):
-            #     raise OSError("flash_sdcard: failed to set block size")
-
-            # Switch to 4 bit buswidth mode for faster transfers
-            #if not self._check_command(check_for_ocr_errors, 'SET_BUS_WIDTH',
-            #    2, is_app_cmd=1, tries=1):
-            #    logging.warning("Unable to enable wide (4-Bit) bus width mode."
-            #                    " Staying at single bit mode.")
-            #else:
-            #    self.sdio.sdio_set_bus_width_and_speed(4)
+            # Set SDIO clk speed to approx. 1 MHz
+            self.sdio.sdio_set_speed(1000000)
 
             if self._check_command(check_for_ocr_errors, 'SET_BLOCKLEN',
                 SECTOR_SIZE, tries=5):

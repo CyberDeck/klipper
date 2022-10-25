@@ -14,8 +14,11 @@
 struct sdiodev_s {
     struct sdio_config sdio_config;
     uint32_t blocksize;
+    uint32_t speed;
     uint8_t data_buffer[4096];
 };
+
+#define TIMEOUT_MSEC 500
 
 void
 command_config_sdio(uint32_t *args)
@@ -23,6 +26,7 @@ command_config_sdio(uint32_t *args)
     struct sdiodev_s *sdio = oid_alloc(args[0], command_config_sdio
                                        , sizeof(*sdio));
     sdio->blocksize = args[1];
+    sdio->speed = 400000; // Initial speed set to ~400khz
 }
 DECL_COMMAND(command_config_sdio, "config_sdio oid=%c blocksize=%u");
 
@@ -41,19 +45,13 @@ command_sdio_set_bus(uint32_t *args)
 DECL_COMMAND(command_sdio_set_bus, "sdio_set_bus oid=%c sdio_bus=%u");
 
 void
-command_sdio_set_bus_width_and_speed(uint32_t *args)
+command_sdio_set_speed(uint32_t *args)
 {
     struct sdiodev_s *sdio = sdiodev_oid_lookup(args[0]);
-    uint8_t width = args[1];
-    uint8_t clkdiv = args[2];
-
-    if ((width != 1) && (width != 4))
-        shutdown("Invalid sdio bus width");
-
-    sdio_switch_bus_width_and_speed(sdio->sdio_config, width, clkdiv);
+    sdio->speed = args[1];
+    sdio_set_speed(sdio->sdio_config, sdio->speed);
 }
-DECL_COMMAND(command_sdio_set_bus_width_and_speed
-             , "sdio_set_bus_width_and_speed oid=%c width=%u clkdiv=%u");
+DECL_COMMAND(command_sdio_set_speed, "sdio_set_speed oid=%c speed=%u");
 
 void
 command_sdio_send_command(uint32_t *args)
@@ -81,8 +79,9 @@ command_sdio_read_data(uint32_t *args)
     uint32_t argument = args[2];
     uint32_t data_len = 0;
     struct sdiodev_s *sdio = sdiodev_oid_lookup(oid);
+    uint32_t timeout = TIMEOUT_MSEC*sdio->speed/1000;
     uint8_t err = sdio_prepare_data_transfer(sdio->sdio_config, 1, 1
-                                             , sdio->blocksize);
+                                             , sdio->blocksize, timeout);
     if (err == 0) {
         err = sdio_send_command(sdio->sdio_config, cmd, argument
                                 , 1, NULL, NULL);
@@ -110,8 +109,9 @@ command_sdio_write_data(uint32_t *args)
     uint32_t argument = args[2];
     uint32_t data_len = 0;
     struct sdiodev_s *sdio = sdiodev_oid_lookup(oid);
+    uint32_t timeout = TIMEOUT_MSEC*sdio->speed/1000;
     uint8_t err = sdio_prepare_data_transfer(sdio->sdio_config, 0, 1
-                                             , sdio->blocksize);
+                                             , sdio->blocksize, timeout);
     if (err == 0) {
         err = sdio_send_command(sdio->sdio_config, cmd, argument
                                 , 1, NULL, NULL);
