@@ -133,7 +133,6 @@ BOARD_ALIASES = {
     'btt-skr-mini-e3-v3': BOARD_DEFS['btt-skr-mini-v3'],
     'btt-skr-mini-mz': BOARD_DEFS['btt-skr-mini'],
     'btt-skr-e3-dip': BOARD_DEFS['btt-skr-mini'],
-    'btt-octopus-pro': BOARD_DEFS['btt-octopus'],
     'btt002-v1': BOARD_DEFS['btt-skr-mini'],
     'creality-v4.2.7': BOARD_DEFS['creality-v4.2.2'],
     'btt-skr-2': BOARD_DEFS['btt-octopus-f407-v1'],
