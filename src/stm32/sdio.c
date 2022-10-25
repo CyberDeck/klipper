@@ -306,7 +306,7 @@ sdio_read_data(struct sdio_config sdio_config, uint8_t *data,
 
     while ((sdio->STA & (SDIO_STA_RXOVERR | SDIO_STA_DCRCFAIL |
         SDIO_STA_DTIMEOUT | SDIO_STA_DATAEND)) == 0) {
-        if ((sdio->STA & SDIO_STA_RXDAVL) != 0) {
+        if ((sdio->STA & SDIO_STA_g) != 0) {
             uint32_t tmp = sdio->FIFO;
             for (uint8_t i=0; (i<4) && (data_remaining>0); i++) {
                 *buf = (uint8_t)(tmp & 0xFF);
